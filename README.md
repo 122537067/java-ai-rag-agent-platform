@@ -1,5 +1,7 @@
 # Java AI RAG Agent Platform
 
+[中文说明](README_CN.md)
+
 A Java AI application engineering portfolio project built incrementally with Java and Spring Boot.
 
 ## Current Iteration
