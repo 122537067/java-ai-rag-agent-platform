@@ -1,24 +1,49 @@
+# 配置参数说明 / Configuration parameter notes
+# 修改时间 / Last updated: 2026-07-02 01:32 (Asia/Shanghai)
 server:
+  # HTTP 服务端口；可通过 SERVER_PORT 覆盖，默认 8080。
+  # HTTP server port; SERVER_PORT overrides the default value of 8080.
   port: ${SERVER_PORT:8080}
 
 spring:
   application:
+    # Spring 应用名称，也会显示在健康检查响应中。
+    # Spring application name, also returned by the health endpoint.
     name: java-ai-rag-agent-platform
   mvc:
     async:
+      # SSE 请求最长等待时间；可使用 ms、s、m 等时间单位。
+      # Maximum SSE request duration; supports units such as ms, s, and m.
       request-timeout: ${CHAT_STREAM_TIMEOUT:5m}
   ai:
     model:
+      # 使用 Spring AI 的 OpenAI 兼容聊天实现连接 DeepSeek。
+      # Selects Spring AI's OpenAI-compatible chat implementation for DeepSeek.
       chat: openai
     openai:
+      # DeepSeek API 密钥；必须从环境变量读取，不设置默认密钥。
+      # DeepSeek API key; read only from the environment with no secret default.
       api-key: ${DEEPSEEK_API_KEY:}
       chat:
+        # DeepSeek API 根地址；通常无需修改，本地兼容服务可覆盖此值。
+        # DeepSeek API root URL; override it when using a compatible local service.
         base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+        # OpenAI-compatible 聊天补全路径，与 base-url 拼成最终请求地址。
+        # OpenAI-compatible completions path appended to base-url.
         completions-path: /chat/completions
         options:
+          # 实际调用的 DeepSeek 模型名称。
+          # DeepSeek model name sent with each request.
           model: ${DEEPSEEK_MODEL:deepseek-v4-flash}
 
 app:
   ai:
+    # 供应用识别和展示的模型提供者名称，不直接决定 Spring AI 客户端类型。
+    # Provider label for application use; it does not select the Spring AI client type.
     provider: ${AI_PROVIDER:deepseek}
+    # 每次模型请求都会携带的系统提示词，可用于加入公司聊天话术。
+    # System prompt sent with every model request; suitable for company chat instructions.
     system-prompt: ${AI_SYSTEM_PROMPT:You are a helpful assistant. Answer clearly and concisely.}
+    # 每个 conversationId 最多保留的消息数，允许范围为 2 到 100。
+    # Maximum retained messages per conversationId; valid range is 2 to 100.
+    memory-max-messages: ${AI_MEMORY_MAX_MESSAGES:20}

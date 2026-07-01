@@ -12,6 +12,9 @@ import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
@@ -19,7 +22,7 @@ import reactor.test.StepVerifier;
  * 使用模拟 ChatClient 验证 DeepSeek 服务，不发送真实网络请求。
  * Verifies the DeepSeek service with a mocked ChatClient and no real network requests.
  *
- * 修改时间 / Last updated: 2026-07-01 22:41 (Asia/Shanghai)
+ * 修改时间 / Last updated: 2026-07-02 00:41 (Asia/Shanghai)
  */
 @ExtendWith(MockitoExtension.class)
 class DeepSeekChatServiceTests {
@@ -31,7 +34,12 @@ class DeepSeekChatServiceTests {
 
     @BeforeEach
     void setUp() {
-        chatService = new DeepSeekChatService(chatClient);
+        var chatMemory = MessageWindowChatMemory.builder()
+                .chatMemoryRepository(new InMemoryChatMemoryRepository())
+                .maxMessages(20)
+                .build();
+        var chatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
+        chatService = new DeepSeekChatService(chatClient, chatMemoryAdvisor);
     }
 
     /**

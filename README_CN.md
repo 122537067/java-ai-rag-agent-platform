@@ -8,19 +8,23 @@
 
 ## 当前迭代
 
-第三次迭代为 DeepSeek 聊天接口增加了流式输出：
+第 3.5 次迭代为 DeepSeek 聊天接口增加了短期上下文记忆：
 
 - Java 17 和 Maven
 - Spring Boot 3.5
 - Spring AI 1.1
 - DeepSeek OpenAI-compatible 聊天 API
 - 同步聊天接口和 SSE 流式聊天接口
+- 可选 `conversationId`，用于多轮上下文
+- 基于内存的会话窗口，可配置最多保留消息数
+- 会话创建、列表、查看和清空接口
 - 明确的 `chunk`、`done` 和 `error` 流事件
 - 可配置的企业 System Prompt
 - 健康检查、参数校验和统一 API 错误
 - 不调用真实模型 API 的自动化测试
 
-多轮会话、文档处理、RAG、Tool Calling 和 MCP 尚未实现。
+当前会话记忆只保存在应用内存中，应用重启后会丢失。
+文档处理、RAG、Tool Calling 和 MCP 尚未实现。
 
 ## 环境要求
 
@@ -39,6 +43,7 @@
 | `DEEPSEEK_BASE_URL` | 否 | `https://api.deepseek.com` | DeepSeek API 基础地址 |
 | `DEEPSEEK_MODEL` | 否 | `deepseek-v4-flash` | 聊天模型名称 |
 | `AI_SYSTEM_PROMPT` | 否 | 通用助手提示词 | 每次聊天使用的企业话术 |
+| `AI_MEMORY_MAX_MESSAGES` | 否 | `20` | 每个会话最多保留的消息数量 |
 | `SERVER_PORT` | 否 | `8080` | 本地 HTTP 端口 |
 | `CHAT_STREAM_TIMEOUT` | 否 | `5m` | 异步请求最长持续时间 |
 
@@ -91,11 +96,36 @@ Content-Type: application/json
 
 ```json
 {
-  "answer": "DeepSeek 生成的回答"
+  "answer": "DeepSeek 生成的回答",
+  "conversationId": null
 }
 ```
 
 空消息返回 HTTP `400`。模型服务失败时返回 HTTP `502`，错误码为 `MODEL_PROVIDER_ERROR`。
+
+如果要连接上下文，请复用同一个 `conversationId`：
+
+```http
+POST /api/chat
+Content-Type: application/json
+
+{
+  "message": "我叫小王。",
+  "conversationId": "demo-1"
+}
+```
+
+然后继续用同一个 ID 提问：
+
+```http
+POST /api/chat
+Content-Type: application/json
+
+{
+  "message": "我叫什么？",
+  "conversationId": "demo-1"
+}
+```
 
 ### 流式聊天接口
 
@@ -105,14 +135,15 @@ Accept: text/event-stream
 Content-Type: application/json
 
 {
-  "message": "用三句话介绍 Spring AI。"
+  "message": "用三句话介绍 Spring AI。",
+  "conversationId": "demo-1"
 }
 ```
 
 使用命令行测试并关闭客户端缓冲：
 
 ```powershell
-$body = @{ message = "Explain Spring AI in three sentences." } | ConvertTo-Json -Compress
+$body = @{ message = "Explain Spring AI in three sentences."; conversationId = "demo-1" } | ConvertTo-Json -Compress
 $body | curl.exe -N -X POST http://localhost:8080/api/chat/stream `
   -H "Accept: text/event-stream" `
   -H "Content-Type: application/json" `
@@ -120,6 +151,32 @@ $body | curl.exe -N -X POST http://localhost:8080/api/chat/stream `
 ```
 
 接口会持续发送 `chunk` 事件，最后发送一个 `done` 事件。如果流开始后模型服务发生错误，则发送 `error` 事件，因为此时 HTTP 响应已经开始，不能再改成 `502`。
+
+### 会话接口
+
+创建新的会话 ID：
+
+```http
+POST /api/conversations
+```
+
+列出当前内存中已知的会话：
+
+```http
+GET /api/conversations
+```
+
+查看某个会话当前保留的消息窗口：
+
+```http
+GET /api/conversations/demo-1
+```
+
+清空某个会话：
+
+```http
+DELETE /api/conversations/demo-1
+```
 
 ## 项目结构
 
@@ -131,11 +188,15 @@ src/main/java/com/example/airagagentplatform
 |-- controller                    # REST 接口和 API 错误处理
 |-- domain                        # 后续添加核心领域模型
 |-- dto
-|   `-- ChatStreamResponse.java   # SSE 事件数据
+|   |-- ChatRequest.java          # 聊天请求，可选 conversationId
+|   |-- ChatStreamResponse.java   # SSE 事件数据
+|   `-- Conversation*.java        # 会话管理 DTO
 |-- repository                    # 后续添加持久化组件
 `-- service
     |-- ChatService.java          # 与提供者无关的聊天接口
-    `-- DeepSeekChatService.java  # DeepSeek 实现
+    |-- ConversationService.java  # 会话记忆接口
+    |-- DeepSeekChatService.java  # DeepSeek 实现
+    `-- InMemoryConversationService.java
 ```
 
 ## 开发顺序
@@ -143,7 +204,7 @@ src/main/java/com/example/airagagentplatform
 1. Spring Boot 基础与本地聊天接口：已完成
 2. DeepSeek 模型 API：已完成
 3. 流式输出：已完成
-3.5. 多轮会话与上下文记忆
+3.5. 多轮会话与上下文记忆：已完成
 4. 文档上传
 5. 文本切块
 6. 生成 Embedding

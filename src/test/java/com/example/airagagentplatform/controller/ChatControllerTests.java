@@ -25,7 +25,7 @@ import reactor.core.publisher.Flux;
  * 验证聊天接口的正常响应和参数校验行为。
  * Verifies successful chat responses and request validation behavior.
  *
- * 修改时间 / Last updated: 2026-07-01 22:41 (Asia/Shanghai)
+ * 修改时间 / Last updated: 2026-07-02 00:41 (Asia/Shanghai)
  */
 @WebMvcTest(ChatController.class)
 class ChatControllerTests {
@@ -52,6 +52,21 @@ class ChatControllerTests {
     }
 
     /**
+     * 携带 conversationId 时应在响应中回显，方便客户端继续复用。
+     * A conversationId should be echoed so clients can keep reusing it.
+     */
+    @Test
+    void chatReturnsConversationIdWhenProvided() throws Exception {
+        when(chatService.chat(any())).thenReturn(new ChatResponse("remembered", "demo-1"));
+
+        mockMvc.perform(post("/api/chat")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"hello\",\"conversationId\":\"demo-1\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conversationId").value("demo-1"));
+    }
+
+    /**
      * 空白消息应被 DTO 校验拒绝。
      * A blank message should be rejected by DTO validation.
      */
@@ -60,6 +75,19 @@ class ChatControllerTests {
         mockMvc.perform(post("/api/chat")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"   \"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    /**
+     * conversationId 只允许简单安全字符，避免把复杂文本当作会话键。
+     * conversationId accepts only simple safe characters to avoid complex text keys.
+     */
+    @Test
+    void chatRejectsInvalidConversationId() throws Exception {
+        mockMvc.perform(post("/api/chat")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"message\":\"hello\",\"conversationId\":\"bad id\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
@@ -99,7 +127,7 @@ class ChatControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
                 .andExpect(content().string(containsString("event:chunk")))
-                .andExpect(content().string(containsString("data:{\"content\":\"Hello\"}")))
+                .andExpect(content().string(containsString("data:{\"content\":\"Hello\",\"conversationId\":null}")))
                 .andExpect(content().string(containsString("event:done")));
     }
 

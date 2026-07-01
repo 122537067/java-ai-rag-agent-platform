@@ -131,3 +131,23 @@
 所属迭代：第 3.5 次迭代。
 
 结论：下一阶段实现多轮会话与上下文记忆。聊天请求会携带 `conversationId`，后端保存用户与模型消息，并在下一次调用模型时附带有限数量的历史记录。同步和流式接口都会共享这套会话能力；第一版使用内存存储，应用重启后历史会丢失，数据库或 Redis 持久化留到后续阶段。
+
+### 21. 第 3.5 次迭代准备如何实现？
+
+所属迭代：第 3.5 次迭代。
+
+结论：复用 Spring AI 官方 `ChatMemory`、`MessageWindowChatMemory`、`InMemoryChatMemoryRepository` 和 `MessageChatMemoryAdvisor`。新增会话创建、查看当前记忆窗口和清空接口；聊天请求可选携带 `conversationId`，未携带时继续保持单轮无状态行为。同步与流式聊天都使用相同的会话记忆，最多保留可配置数量的最近消息。
+
+### 22. DeepSeek 和 Codex 的会话记录分别存在哪里？
+
+所属迭代：第 3.5 次迭代准备阶段。
+
+结论：当前 Java 项目没有实现会话存储，每次请求只在处理期间存在于内存中，应用本地也没有聊天记录文件或数据库。DeepSeek API 是无状态接口，不会替应用维护下一轮所需的上下文；但 DeepSeek 仍可能按其隐私政策处理和留存 API 的输入、日志等平台数据，因此“无上下文”不等于“平台完全不留数据”。DeepSeek 网页或 App 的聊天历史属于 DeepSeek 账号侧数据，与本项目无关。Codex 的未归档和已归档聊天在登录 ChatGPT 后保存在 OpenAI 账号中，归档只是从侧边栏隐藏，不等于删除；本机还可看到活动会话副本位于 `C:\Users\WihenneWong\.codex\sessions`，归档会话副本位于 `C:\Users\WihenneWong\.codex\archived_sessions`。这些 Codex 数据不会写入当前 Java 项目，不应手动修改或提交到项目 Git。项目中由 Codex 创建或修改的源代码、文档仍保存在当前工作区，并由本地文件系统和 Git 管理。
+
+### 23. 当前 Java 项目没有聊天存档，如何连接上下文？
+
+所属迭代：第 3.5 次迭代准备阶段。
+
+结论：上下文不一定需要永久存档。后端可以先实现短期会话记忆：客户端每次请求携带 `conversationId`，后端用这个 ID 找到最近几轮用户消息和模型回复，再把这些历史消息连同当前问题一起发送给模型。模型接口本身仍然是无状态的，真正“连接上下文”的动作发生在 Java 后端。第一版会使用内存保存会话，应用重启后丢失；后续如需长期保存，再接入数据库、Redis 或向量库。
+
+实现状态：第 3.5 次迭代已经加入 `conversationId`、Spring AI `MessageWindowChatMemory`、内存会话窗口和 `/api/conversations` 管理接口。同步聊天 `/api/chat` 和流式聊天 `/api/chat/stream` 都可以在请求体中携带同一个 `conversationId` 来连接上下文；不携带时仍然是单轮无状态聊天。
