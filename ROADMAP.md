@@ -17,10 +17,20 @@ The project is implemented in ten small, reviewable iterations.
 - Add a configurable system prompt
 - Map provider failures to a stable API error
 
-## Iteration 3: Streaming Output
+## Iteration 3: Streaming Output (Complete)
 
 - Add a streaming chat endpoint
 - Stream model output to the client
+- Emit explicit chunk, done, and error SSE events
+- Keep the synchronous chat endpoint unchanged
+
+## Iteration 3.5: Conversation Context and Memory
+
+- Add a conversation identifier to chat requests
+- Store user and assistant messages
+- Include limited conversation history in model requests
+- Add operations for creating and clearing conversations
+- Start with an in-memory implementation behind a replaceable storage interface
 
 ## Iteration 4: Document Upload
 

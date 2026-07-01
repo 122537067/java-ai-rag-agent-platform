@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: java-ai-rag-agent-platform
+  mvc:
+    async:
+      request-timeout: ${CHAT_STREAM_TIMEOUT:5m}
   ai:
     model:
       chat: openai

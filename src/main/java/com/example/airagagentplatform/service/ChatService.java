@@ -2,10 +2,13 @@ package com.example.airagagentplatform.service;
 
 import com.example.airagagentplatform.dto.ChatRequest;
 import com.example.airagagentplatform.dto.ChatResponse;
+import reactor.core.publisher.Flux;
 
 /**
  * 定义聊天业务能力，使控制器不依赖具体实现。
  * Defines the chat capability so the controller does not depend on a concrete implementation.
+ *
+ * 修改时间 / Last updated: 2026-07-01 22:41 (Asia/Shanghai)
  */
 public interface ChatService {
 
@@ -17,4 +20,13 @@ public interface ChatService {
      * @return chat response / 聊天响应
      */
     ChatResponse chat(ChatRequest request);
+
+    /**
+     * 根据用户请求持续产生聊天文本块。
+     * Produces chat text chunks continuously for the user request.
+     *
+     * @param request validated chat request / 已校验的聊天请求
+     * @return model response chunks / 模型响应文本块
+     */
+    Flux<String> stream(ChatRequest request);
 }

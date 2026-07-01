@@ -27,6 +27,10 @@ The target direction is:
 - Keep README updated when major features are added.
 - Prefer small, reviewable changes.
 - Before adding complex architecture, explain why it is needed.
+- When a Java source file is added or meaningfully changed, add or update a class-level or package-level Javadoc timestamp using `修改时间 / Last updated: YYYY-MM-DD HH:mm (Asia/Shanghai)`.
+- Keep timestamps at file-level documentation instead of adding them to every line or trivial statement.
+- Record each meaningful project-related user question and its concise conclusion in `QUESTIONS_CN.md`.
+- Keep question records aligned with the current implementation and roadmap.
 
 ## Current Priority
 

@@ -2,21 +2,25 @@
 
 [中文说明](README_CN.md)
 
+[Project questions and answers (Chinese)](QUESTIONS_CN.md)
+
 A Java AI application engineering portfolio project built incrementally with Java and Spring Boot.
 
 ## Current Iteration
 
-Iteration 2 connects the existing chat endpoint to the DeepSeek API:
+Iteration 3 adds streaming output to the DeepSeek chat integration:
 
 - Java 17 and Maven
 - Spring Boot 3.5
 - Spring AI 1.1
 - DeepSeek OpenAI-compatible chat API
+- Synchronous and SSE streaming chat endpoints
+- Explicit `chunk`, `done`, and `error` stream events
 - Configurable system prompt for company instructions
 - Health check, request validation, and consistent API errors
 - Automated tests that never call the real model API
 
-Streaming output, document processing, RAG, Tool Calling, and MCP are not implemented yet.
+Conversation memory, document processing, RAG, Tool Calling, and MCP are not implemented yet.
 
 ## Requirements
 
@@ -36,6 +40,7 @@ The application reads model settings from environment variables. Never commit a 
 | `DEEPSEEK_MODEL` | No | `deepseek-v4-flash` | Chat model name |
 | `AI_SYSTEM_PROMPT` | No | general assistant prompt | Instructions applied to every chat |
 | `SERVER_PORT` | No | `8080` | Local HTTP port |
+| `CHAT_STREAM_TIMEOUT` | No | `5m` | Maximum asynchronous request duration |
 
 PowerShell example:
 
@@ -92,6 +97,30 @@ Response:
 
 Blank messages return HTTP `400`. Model provider failures return HTTP `502` with the error code `MODEL_PROVIDER_ERROR`.
 
+### Streaming Chat
+
+```http
+POST /api/chat/stream
+Accept: text/event-stream
+Content-Type: application/json
+
+{
+  "message": "Explain Spring AI in three sentences."
+}
+```
+
+Test without client-side buffering:
+
+```powershell
+$body = @{ message = "Explain Spring AI in three sentences." } | ConvertTo-Json -Compress
+$body | curl.exe -N -X POST http://localhost:8080/api/chat/stream `
+  -H "Accept: text/event-stream" `
+  -H "Content-Type: application/json" `
+  --data-binary '@-'
+```
+
+The stream emits `chunk` events, followed by one `done` event. A provider failure after streaming begins is emitted as an `error` event because the HTTP response has already started.
+
 ## Project Structure
 
 ```text
@@ -101,7 +130,8 @@ src/main/java/com/example/airagagentplatform
 |   `-- AiChatProperties.java     # Application-level AI settings
 |-- controller                    # REST endpoints and API errors
 |-- domain                        # Core domain models added later
-|-- dto                           # API request and response records
+|-- dto
+|   `-- ChatStreamResponse.java   # SSE event data
 |-- repository                    # Persistence components added later
 `-- service
     |-- ChatService.java          # Provider-independent chat contract
@@ -112,7 +142,8 @@ src/main/java/com/example/airagagentplatform
 
 1. Spring Boot foundation and local chat endpoint - complete
 2. DeepSeek model API integration - complete
-3. Streaming output
+3. Streaming output - complete
+3.5. Conversation context and memory
 4. Document upload
 5. Text chunking
 6. Embedding generation
