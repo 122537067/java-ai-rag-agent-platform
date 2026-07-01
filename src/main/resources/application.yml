@@ -4,3 +4,18 @@ server:
 spring:
   application:
     name: java-ai-rag-agent-platform
+  ai:
+    model:
+      chat: openai
+    openai:
+      api-key: ${DEEPSEEK_API_KEY:}
+      chat:
+        base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+        completions-path: /chat/completions
+        options:
+          model: ${DEEPSEEK_MODEL:deepseek-v4-flash}
+
+app:
+  ai:
+    provider: ${AI_PROVIDER:deepseek}
+    system-prompt: ${AI_SYSTEM_PROMPT:You are a helpful assistant. Answer clearly and concisely.}

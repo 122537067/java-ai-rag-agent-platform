@@ -52,3 +52,17 @@ Implement the platform in ten separate iterations. The first iteration contains 
 Reason:
 
 Small milestones make each concept easier to learn, test, and review. They also prevent later RAG, Tool Calling, and MCP concerns from obscuring the basic backend flow.
+
+## 2026-07-01: DeepSeek API Integration
+
+Decision:
+
+Use Spring AI's OpenAI-compatible chat integration to call the DeepSeek API. Use `deepseek-v4-flash` as the default model and keep the base URL, API key, model name, and system prompt externalized.
+
+Reason:
+
+DeepSeek exposes an OpenAI-compatible API, while Spring AI provides a portable Java abstraction that will make future provider changes easier. Environment-based credentials prevent secrets from entering source control.
+
+Compatibility:
+
+Upgrade to Spring Boot 3.5.16 and use Spring AI 1.1.8 because this Spring AI generation supports Spring Boot 3.4.x and 3.5.x.

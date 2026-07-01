@@ -2,18 +2,20 @@
 
 The project is implemented in ten small, reviewable iterations.
 
-## Iteration 1: Spring Boot and Chat Endpoint
+## Iteration 1: Spring Boot and Chat Endpoint (Complete)
 
 - Create the Java 17 and Maven Spring Boot 3 project
 - Add a health check endpoint
 - Add a validated local chat endpoint
 - Do not connect to an external model
 
-## Iteration 2: Model API
+## Iteration 2: DeepSeek Model API (Complete)
 
 - Add model provider configuration
 - Load credentials from environment variables
-- Connect the chat service to a model API
+- Connect the chat service to DeepSeek through Spring AI
+- Add a configurable system prompt
+- Map provider failures to a stable API error
 
 ## Iteration 3: Streaming Output
 
